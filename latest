@@ -1,0 +1,40 @@
+#!/bin/bash
+
+if [[ "$(whoami)" != "root" ]] ; then
+  echo "You must run this script as root"
+  exit 1
+fi
+
+export GITHUB_REPO=https://raw.githubusercontent.com/VeryCrushed/webuzo/master
+
+# Update Ubuntu
+echo "* Installing updates..."
+sleep 3
+apt-get update
+apt-get -y upgrade
+
+if [ $? -ne 0 ]; then
+  echo "* Error installing packages; aborting"
+  exit 1
+fi
+
+# Install Webuzo
+echo "* Installing webuzo..."
+sleep 3
+wget -N http://files.webuzo.com/install.sh
+chmod 0755 install.sh
+./install.sh --install=apache,mysql,php56,python2,perl,sqlite,curl,mcrypt,pureftpd,exim,dovecot,bind,ldap
+rm -f install.sh
+
+# Install startup script
+echo "* Installing startup script..."
+sleep 3
+curl -L -s $GITHUB_REPO/webuzo -o /usr/local/bin/webuzo.sh
+chmod 0755 /usr/local/bin/webuzo.sh
+systemctl enable rc-local.service
+sed -i '13i /usr/local/bin/webuzo.sh' /etc/rc.local
+
+# Shut down
+echo "* Shutting down..."
+sleep 3
+shutdown -h now
